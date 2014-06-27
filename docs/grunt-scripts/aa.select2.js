@@ -14,7 +14,7 @@
 
 angular
     .module('aa.select2', [])
-    .directive('aaSelect2', function ($q) {
+    .directive('aaSelect2', ['$q', function ($q) {
 
         return {
             require: 'ngModel',
@@ -24,7 +24,7 @@ angular
 
                 //native select2 options directly from the user. always takes prescedence
                 //copy the object before we muck with it incase multiple select2s are sharing settings
-                var settings = scope.$eval(attrs.aaSelect2);
+                var settings = angular.copy(scope.$eval(attrs.aaSelect2));
 
                 if(!angular.isObject(settings) || isEmptyObject(settings)) {
                     throw 'aa-select2 options must be specified. Ex: <div aa-select2="*options here*"...\r\n';
@@ -105,31 +105,68 @@ angular
                                 if(!ngModel.$modelValue) {
                                     return;
                                 }
+                                
+                                if(inThisMode && inTagsMode) {
+                                    var newData = [];
+                                    angular.forEach(ngModel.$modelValue, function(str) {
+                                        newData.push({id: str, text: str});
+                                    });
+                                    callback(newData);
+                                    return;
+
+                                }
 
                                 if(inThisMode) {
                                     callback({id: ngModel.$modelValue, text: ngModel.$modelValue});
                                     return;
                                 }
 
+                                //allow for multiple lookups in tags mode (or just one in other modes)
+                                var modelValueIsArray = angular.isArray(ngModel.$modelValue),
+                                    lookups = [];
+
+                                if(modelValueIsArray) {
+                                    angular.forEach(ngModel.$modelValue, function(val) {
+                                        lookups.push(settings.textLookup(val));
+                                    });
+                                } else {
+                                    lookups.push(settings.textLookup(ngModel.$modelValue));
+                                }
+
                                 //resolves promises and resolved values alike
-                                $q.when(settings.textLookup(ngModel.$modelValue))
-                                    .then(function(data) {
+                                $q.all(lookups)
+                                    .then(function(results) {
 
-                                        var result;
-                                        if(angular.isUndefined(data.data)) {
-                                            result = data;
+                                        if(modelValueIsArray) {
+                                            var mappedResults = [];
+
+                                            angular.forEach(results, function(result) {
+                                                mappedResults.push(resultMapper(result));
+                                            });
+
+                                            callback(mappedResults);
                                         } else {
-                                            result = data.data;
+                                            callback(resultMapper(results[0]));
                                         }
 
-                                        if(!angular.isObject(result)) {
-                                            //passed back just the text. resolve:
-                                            var newResult = {};
-                                            newResult[settings.id] = ngModel.$modelValue;
-                                            newResult[settings.text] = result;
-                                            result = newResult;
+
+                                        function resultMapper(data) {
+                                            var result;
+                                            if(angular.isUndefined(data.data)) {
+                                                result = data;
+                                            } else {
+                                                result = data.data;
+                                            }
+
+                                            if(!angular.isObject(result)) {
+                                                //passed back just the text. resolve:
+                                                var newResult = {};
+                                                newResult[settings.id] = ngModel.$modelValue;
+                                                newResult[settings.text] = result;
+                                                result = newResult;
+                                            }
+                                            return result;
                                         }
-                                        callback(result);
                                     });
                             };
                         }
@@ -224,4 +261,4 @@ angular
                 }
             }
         };
-    });
+    }]);

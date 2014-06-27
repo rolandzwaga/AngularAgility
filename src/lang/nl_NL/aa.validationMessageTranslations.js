@@ -3,7 +3,7 @@
  */
 var formExtensionTranslations = {
     required: "{0} is verplicht.",
-    email: "Het veld {0} moet een geldig email adres zijn..",
+    email: "Het veld {0} moet een geldig email adres zijn.",
     minlength: "{0} moet minstens {1} karakters(s) zijn.",
     maxlength: "{0} moet minder dan {1} karakters(s) zijn.",
     min: "{0} moet minstens {1} zijn.",

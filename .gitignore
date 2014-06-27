@@ -3,3 +3,5 @@ node_modules
 /index.html
 /bower_components
 /docs/web.config
+/*.iml
+/npm-debug.log
