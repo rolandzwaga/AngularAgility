@@ -11,7 +11,7 @@
 (function(){
     'use strict';
     angular.module('aa.formDynamic', ['aa.formServices'])
-        .directive('aaDynamicForm', ['$compile', '$parse', 'aaFormConfigurationService', function($compile, $parse, formConfigService) {
+        .directive('aaDynamicForm', ['$compile', '$parse', 'aaFormConfigurationService', 'aaDynamicFormConfig', function($compile, $parse, formConfigService, aaDynamicFormConfig) {
             return {
                 restrict: 'A',
                 scope: false,
@@ -53,26 +53,10 @@
                     }
                 },
                 createSimplePropertyElement: function (entity, propertyType, propertyName) {
-                    return angular.element('<input type="' + propertyType + '" data-ng-model="' + entity.name + '.' + propertyName + '"/>');
+                    return aaDynamicFormConfig.elementCreationStrategies[propertyType](entity, propertyType, propertyName);
                 },
-                createComplexPropertyElement: function (entity, propertyType, propertyName) {
-                    var element;
-                    switch (propertyType.name) {
-                        case "select":
-                            element = this.createSelectPropertyElement(entity, propertyName);
-                            break;
-                        default:
-                            element = this.createSimplePropertyElement(entity, propertyType.name, propertyName);
-                    }
-                    for (var name in propertyType) {
-                        if (name !== 'name') {
-                            element.attr(name, propertyType[name]);
-                        }
-                    }
-                    return element;
-                },
-                createSelectPropertyElement: function (entity, propertyName) {
-                    return angular.element('<select data-ng-model="' + entity.name + '.' + propertyName + '"/>');
+                createComplexPropertyElement: function (entity, propertyTypeConfig, propertyName) {
+                    return aaDynamicFormConfig.elementCreationStrategies[propertyTypeConfig.name](entity, propertyName, propertyTypeConfig);
                 }
             };
         }]);
